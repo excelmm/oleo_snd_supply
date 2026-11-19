@@ -28,6 +28,7 @@ DATA_SLOT = DATA_TAG + b'{"records":[]}</script>'
 STATIC_FILES = {
     "/": ("dashboard.html", "text/html; charset=utf-8"),
     "/dashboard.html": ("dashboard.html", "text/html; charset=utf-8"),
+    "/colours.js": ("colours.js", "text/javascript; charset=utf-8"),
     "/panel-sizes.js": ("panel-sizes.js", "text/javascript; charset=utf-8"),
     "/D3-LICENSE.txt": ("D3-LICENSE.txt", "text/plain; charset=utf-8"),
 }

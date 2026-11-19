@@ -18,6 +18,7 @@
       <h1>Global Oleochemicals</h1>
     </div>
     <div class="oleo-head-actions">
+      <button type="button" data-open-colours>Colours</button>
       <button type="button" data-open-panel-sizes>Panel sizes</button>
       <button class="oleo-action" type="button" data-open-editor disabled>Manage records</button>
     </div>
@@ -81,18 +82,25 @@
         <h2 id="oleo-location-title">Plant capacities</h2>
         <p data-location-caption></p>
         <p class="oleo-muted" data-location-context role="status"></p>
-        <ul class="oleo-location-list" data-location-list></ul>
         <section class="oleo-comparison" data-comparison hidden>
           <p class="oleo-kicker" data-comparison-label></p>
-          <p data-comparison-count></p>
           <div class="oleo-compare-actions">
             <button type="button" data-zoom-selection>Zoom to sites</button>
             <button type="button" data-clear-selection>Clear selection</button>
           </div>
         </section>
+        <table class="oleo-location-table" data-location-table aria-label="Selected plant capacities" hidden>
+          <thead>
+            <tr>
+              <th scope="col">Plant</th>
+              <th scope="col" class="oleo-number"><span><i class="oleo-dot oleo-pin-acid" aria-hidden="true"></i> Acid cap</span></th>
+              <th scope="col" class="oleo-number"><span><i class="oleo-dot oleo-pin-alcohol" aria-hidden="true"></i> Alcohol cap</span></th>
+            </tr>
+          </thead>
+          <tbody data-location-list></tbody>
+        </table>
         <details class="oleo-history-panel" data-history-panel open>
           <summary>Capacity changes</summary>
-          <p class="oleo-history-plant" data-history-plant></p>
           <p class="oleo-muted" data-history-context role="status"></p>
           <div data-capacity-history></div>
         </details>
@@ -117,7 +125,7 @@
       <button type="button" data-clear-table-filters disabled>Clear filters</button>
     </div>
     <div class="oleo-scroll" id="oleo-table-viewport" role="region" aria-label="Capacity columns">
-      <table><thead></thead><tbody></tbody></table>
+      <table><thead></thead><tbody></tbody><tfoot></tfoot></table>
     </div>
     <div class="oleo-resizer oleo-height-resizer" role="separator" tabindex="0" aria-label="Capacity table height" aria-orientation="horizontal" aria-controls="oleo-table-viewport" data-resize="tableHeight"></div>
     <div class="oleo-pagination" aria-label="Capacity table pages">
@@ -162,6 +170,22 @@
     <p class="oleo-muted" data-stacked-layout hidden>On this screen, the panels stack.</p>
     <div class="oleo-dialog-actions">
       <button type="button" data-reset-panel-sizes>Reset layout</button>
+    </div>
+  </dialog>
+  <dialog aria-labelledby="oleo-colours-title" data-colour-dialog>
+    <div class="oleo-dialog-head">
+      <h2 id="oleo-colours-title">Product colours</h2>
+      <button type="button" data-close-colours>Done</button>
+    </div>
+    <div class="oleo-palette-options" data-palette-options role="group" aria-label="Colour palettes"></div>
+    <div class="oleo-custom-colours">
+      <label>Fatty acid <input type="color" data-colour-acid></label>
+      <label>Fatty alcohol <input type="color" data-colour-alcohol></label>
+    </div>
+    <p class="oleo-muted" data-colour-feedback role="status" hidden>Choose a different colour for each product.</p>
+    <div class="oleo-dialog-actions">
+      <button type="button" data-reset-colours>Reset colours</button>
+      <button class="oleo-action" type="button" data-apply-colours>Use custom colours</button>
     </div>
   </dialog>
   <p class="oleo-footer oleo-muted"><span data-announcement role="status">Local capacity data</span><span data-location-credits></span></p>
@@ -252,7 +276,10 @@
   #oleo-capacity-preview .oleo-pin::before { width: var(--marker-diameter); height: var(--marker-diameter); box-shadow: 0 0 0 1.5px var(--paper); }
   #oleo-capacity-preview .oleo-pin[aria-pressed="true"]::before { outline: 1px solid var(--ink); outline-offset: 4px; }
   #oleo-capacity-preview .oleo-pin.oleo-other-cluster { opacity: .55; }
-  #oleo-capacity-preview .oleo-pin span { position: absolute; font-size: var(--text-small); color: var(--on-teal); }
+  #oleo-capacity-preview .oleo-pin span {
+    position: absolute; font-size: var(--text-small); color: #fff;
+    -webkit-text-stroke: 2px #102020; paint-order: stroke fill;
+  }
   #oleo-capacity-preview .oleo-map-tooltip {
     position: absolute; z-index: 3; width: max-content; min-width: 174px; max-width: min(245px, calc(100% - 16px));
     padding: 10px 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
@@ -270,16 +297,30 @@
   #oleo-capacity-preview .oleo-location-panel { contain: size; display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 17px; }
   #oleo-capacity-preview .oleo-location-panel h2 { margin-bottom: 3px; }
   #oleo-capacity-preview [data-location-caption] { font-size: var(--text-data); }
-  #oleo-capacity-preview .oleo-history-plant { font-size: var(--text-control); font-weight: 600; }
   #oleo-capacity-preview .oleo-sidebar-scroll { overflow-y: auto; min-height: 0; scrollbar-gutter: stable; }
-  #oleo-capacity-preview .oleo-location-list { margin: 8px 0 12px; padding: 0; list-style: none; }
+  #oleo-capacity-preview .oleo-location-table {
+    width: 100%; border-collapse: collapse; margin: 8px 0 12px;
+    font-size: var(--text-data); font-variant-numeric: tabular-nums;
+  }
+  #oleo-capacity-preview .oleo-location-table th,
+  #oleo-capacity-preview .oleo-location-table td { border-bottom: 1px solid var(--line); padding: 6px 4px; }
+  #oleo-capacity-preview .oleo-location-table thead th {
+    position: sticky; z-index: 1; top: 0; background: var(--paper); color: var(--muted);
+    text-align: left; font-size: var(--text-small); font-weight: 600; line-height: 1.3;
+  }
+  #oleo-capacity-preview .oleo-location-table .oleo-number { width: 27%; text-align: right; }
+  #oleo-capacity-preview .oleo-location-table thead span { display: inline-flex; align-items: baseline; gap: 3px; }
+  #oleo-capacity-preview .oleo-location-table .oleo-dot { flex: none; width: 7px; height: 7px; }
+  #oleo-capacity-preview .oleo-location-table tbody th { padding: 0; text-align: left; }
   #oleo-capacity-preview .oleo-history-panel { padding-top: 9px; border-top: 1px solid var(--line); }
   #oleo-capacity-preview .oleo-history-panel summary { margin-bottom: 5px; color: var(--teal); cursor: pointer; font-size: var(--text-data); font-weight: 600; }
   #oleo-capacity-preview .oleo-location-plant {
-    display: block; width: 100%; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
-    padding: 7px 6px; text-align: left; font-size: var(--text-data); font-weight: 600;
+    display: block; width: 100%; min-height: 30px; border: 0; border-radius: 0; background: transparent;
+    padding: 6px 4px; text-align: left; font-size: var(--text-data); font-weight: 550; overflow-wrap: anywhere;
   }
-  #oleo-capacity-preview .oleo-location-plant small { color: var(--muted); font-size: var(--text-small); font-weight: 400; }
+  #oleo-capacity-preview .oleo-location-plant small {
+    display: block; color: var(--muted); font-size: var(--text-small); font-weight: 400;
+  }
   #oleo-capacity-preview .oleo-history-year {
     position: sticky; z-index: 1; top: 0; margin: 0; padding: 6px 6px 4px; background: var(--paper);
     border-bottom: 1px solid var(--line); font-size: var(--text-data); font-weight: 600; font-variant-numeric: tabular-nums;
@@ -292,7 +333,7 @@
   #oleo-capacity-preview .oleo-capacity-line { align-items: baseline; margin-top: 4px; font-size: var(--text-caption); font-weight: 400; }
   #oleo-capacity-preview .oleo-capacity-line .oleo-dot { width: 7px; height: 7px; margin-right: 4px; }
   #oleo-capacity-preview .oleo-capacity-line strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
-  #oleo-capacity-preview .oleo-comparison { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); font-size: var(--text-data); }
+  #oleo-capacity-preview .oleo-comparison { margin: 9px 0 12px; font-size: var(--text-data); }
   #oleo-capacity-preview .oleo-compare-actions { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
   #oleo-capacity-preview [data-matrix], #oleo-capacity-preview .oleo-pagination button, #oleo-capacity-preview .oleo-compare-actions button { font-size: var(--text-caption); }
   #oleo-capacity-preview .oleo-capacity-head { padding: 15px 23px 10px; }
@@ -303,17 +344,21 @@
   #oleo-capacity-preview .oleo-table-filters input, #oleo-capacity-preview .oleo-table-filters select { max-width: min(220px, 57vw); }
   #oleo-capacity-preview [data-show-all], #oleo-capacity-preview [data-clear-table-filters] { font-size: var(--text-caption); }
   #oleo-capacity-preview .oleo-scroll { height: var(--oleo-table-height, auto); overflow: auto; padding-inline: 23px; }
-  #oleo-capacity-preview table { border-collapse: collapse; min-width: 570px; width: 100%; text-align: left; font-variant-numeric: tabular-nums; }
-  #oleo-capacity-preview th { position: sticky; top: 0; z-index: 1; background: var(--paper); color: var(--muted); font-weight: 500; font-size: var(--text-caption); }
-  #oleo-capacity-preview td { font-size: var(--text-data); }
-  #oleo-capacity-preview th, #oleo-capacity-preview td { border-bottom: 1px solid var(--line); padding: 6px 8px; white-space: nowrap; }
+  #oleo-capacity-preview .oleo-scroll table { border-collapse: collapse; min-width: 570px; width: 100%; text-align: left; font-variant-numeric: tabular-nums; }
+  #oleo-capacity-preview .oleo-scroll thead th { position: sticky; top: 0; z-index: 1; background: var(--paper); color: var(--muted); font-weight: 500; font-size: var(--text-caption); }
+  #oleo-capacity-preview .oleo-scroll td { font-size: var(--text-data); }
+  #oleo-capacity-preview .oleo-scroll th, #oleo-capacity-preview .oleo-scroll td { border-bottom: 1px solid var(--line); padding: 6px 8px; white-space: nowrap; }
+  #oleo-capacity-preview .oleo-scroll tfoot :is(th, td) {
+    position: sticky; bottom: 0; z-index: 1; background: var(--highlight);
+    box-shadow: inset 0 1px var(--line); font-size: var(--text-data); font-weight: 600;
+  }
   #oleo-capacity-preview .oleo-number { text-align: right; }
   #oleo-capacity-preview .oleo-sort { display: inline-flex; align-items: center; gap: 4px; font: inherit; color: inherit; border: 0; padding: 3px 0; min-height: 24px; background: transparent; white-space: nowrap; }
   #oleo-capacity-preview .oleo-sort span { color: var(--muted); }
   #oleo-capacity-preview th[aria-sort] .oleo-sort span { color: var(--teal); }
   #oleo-capacity-preview .oleo-row-current { background: var(--highlight); }
-  #oleo-capacity-preview td button { display: block; border: 0; padding: 2px 0; min-height: 22px; background: transparent; }
-  #oleo-capacity-preview td .oleo-location { display: block; font-size: var(--text-small); line-height: 1.4; }
+  #oleo-capacity-preview .oleo-scroll td button { display: block; border: 0; padding: 2px 0; min-height: 22px; background: transparent; }
+  #oleo-capacity-preview .oleo-scroll td .oleo-location { display: block; font-size: var(--text-small); line-height: 1.4; }
   #oleo-capacity-preview .oleo-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 23px 0; }
   #oleo-capacity-preview .oleo-pagination[hidden] { display: none; }
   #oleo-capacity-preview .oleo-footer { padding: 11px 23px; font-size: var(--text-small); }
@@ -327,6 +372,17 @@
   #oleo-capacity-preview .oleo-size-fields { display: grid; gap: 8px; margin: 15px 0 10px; }
   #oleo-capacity-preview .oleo-size-fields label { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, 110px); }
   #oleo-capacity-preview .oleo-size-fields input { width: 100%; min-width: 0; }
+  #oleo-capacity-preview .oleo-palette-options { display: grid; gap: 6px; margin: 15px 0 12px; }
+  #oleo-capacity-preview .oleo-palette-options label {
+    padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); cursor: pointer;
+  }
+  #oleo-capacity-preview .oleo-palette-options label:has(:checked) { background: var(--highlight); border-color: var(--teal); }
+  #oleo-capacity-preview .oleo-palette-options input { padding: 0; margin: 0; min-height: 0; accent-color: var(--teal); }
+  #oleo-capacity-preview .oleo-palette-swatches { display: flex; gap: 5px; margin-left: auto; }
+  #oleo-capacity-preview .oleo-palette-swatches i { width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line); }
+  #oleo-capacity-preview .oleo-custom-colours { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  #oleo-capacity-preview .oleo-custom-colours input { width: 43px; padding: 4px; cursor: pointer; }
+  #oleo-capacity-preview [data-colour-feedback] { color: var(--red); margin-top: 6px; }
   #oleo-capacity-preview .oleo-dialog-actions { margin-top: 12px; }
   #oleo-capacity-preview .oleo-edit-error { color: var(--red); margin-top: 8px; font-size: var(--text-data); }
   @media (max-width: 560px) {
@@ -414,7 +470,7 @@
   let visible = [];
   let mapRows = [];
   let tooltipPin = null;
-  let lastHistoryScope;
+  let lastPanelScope;
 
   if (dataset.source) announcement.textContent = dataset.source;
   const sources = dataset.locationSources ?? [];
@@ -440,7 +496,7 @@
     button.addEventListener('click', () => {
       if (period === selectedYear) return;
       setYear(period);
-      updateFilters();
+      render();
     });
     button.addEventListener('keydown', event => {
       const positions = { ArrowLeft: index - 1, ArrowRight: index + 1, Home: 0, End: years.length - 1 };
@@ -507,11 +563,15 @@
     render({ keepPlant: true });
   }
 
+  function sumKnown(values) {
+    const known = values.filter(value => value != null);
+    return known.length ? d3.sum(known) : null;
+  }
+
   function groupCapacities(records) {
-    return Object.fromEntries(Object.keys(products).map(product => {
-      const values = records.map(row => capacity(row, product)).filter(value => value != null);
-      return [product, values.length ? d3.sum(values) : null];
-    }));
+    return Object.fromEntries(Object.keys(products).map(product => [
+      product, sumKnown(records.map(row => capacity(row, product))),
+    ]));
   }
 
   function hideMapTooltip(button = tooltipPin) {
@@ -521,16 +581,22 @@
     mapTooltip.hidden = true;
   }
 
+  const placeName = row => [row.city, row.state, row.country].filter(Boolean).join(', ') || row.region || 'Location unspecified';
+  function groupLocation(records) {
+    const first = records[0];
+    const place = placeName(first);
+    if (records.every(row => placeName(row) === place)) return place;
+    return `Near ${[first.city, first.country].filter(Boolean).join(', ') || place}`;
+  }
+
   function showMapTooltip(button, group, totals, diameter) {
     hideMapTooltip();
     tooltipPin = button;
     const first = group.rows[0];
-    const locations = new Set(group.rows.map(row => [row.city, row.state, row.country].filter(Boolean).join(', ')));
     const grouped = group.rows.length > 1;
-    const location = locations.size === 1 ? [...locations][0] : `Near ${first.city}, ${first.country}`;
     const hasMissingCapacity = group.rows.some(row => Object.keys(products).some(product => capacity(row, product) == null));
     find('[data-map-tooltip-name]').textContent = grouped ? `${group.rows.length} capacity records` : companyName(first);
-    find('[data-map-tooltip-location]').textContent = location;
+    find('[data-map-tooltip-location]').textContent = groupLocation(group.rows);
     find('[data-map-tooltip-year]').textContent = `${year()} ${hasMissingCapacity ? 'known capacity' : 'capacity'}`;
     for (const product of Object.keys(products)) {
       const value = totals[product];
@@ -585,6 +651,7 @@
     }
     const displayedProducts = selectedProducts();
     const selectedLocation = locationKey(rows.find(row => row.id === selectedId));
+    const locationCount = plantsByLocation.get(selectedLocation)?.length ?? 1;
     for (const group of clusters) {
       const button = document.createElement('button');
       button.type = 'button';
@@ -599,8 +666,12 @@
       button.style.setProperty('--marker-diameter', `${diameter}px`);
       button.style.left = `${group.x}px`;
       button.style.top = `${group.y}px`;
-      button.setAttribute('aria-pressed', String(group.rows.some(row => row.id === selectedId || locationKey(row) === selectedLocation)));
-      if (comparisonIds && !group.rows.some(row => comparisonIds.has(row.id))) button.classList.add('oleo-other-cluster');
+      const selected = comparisonIds
+        ? group.rows.every(row => comparisonIds.has(row.id))
+        : group.rows.length === locationCount &&
+          group.rows.every(row => row.id === selectedId || locationKey(row) === selectedLocation);
+      button.setAttribute('aria-pressed', String(selected));
+      button.classList.toggle('oleo-other-cluster', Boolean(comparisonIds && !group.rows.some(row => comparisonIds.has(row.id))));
       const first = group.rows[0];
       const locationLabel = group.rows.length > 1
         ? `${group.rows.length} capacity records near ${first.city}`
@@ -624,8 +695,7 @@
       });
       button.addEventListener('click', () => {
         const groupIds = group.rows.map(row => row.id);
-        if (groupIds.length > 1) comparisonIds = new Set(groupIds);
-        else if (comparisonIds && !comparisonIds.has(first.id)) comparisonIds = null;
+        comparisonIds = new Set(groupIds);
         selectRow(groupIds.includes(selectedId) ? selectedId : first.id);
         pins.children[clusters.findIndex(cluster => cluster.rows.some(row => row.id === selectedId))]?.focus();
       });
@@ -652,104 +722,123 @@
     return line;
   }
 
-  function drawSelectedPlant(record) {
-    const alternatives = record ? (plantsByLocation.get(locationKey(record)) ?? [record]) : [];
-    const nameCounts = d3.rollup(alternatives, entries => entries.length, row => normalizeText(companyName(row)));
-    const hasDuplicateName = row => nameCounts.get(normalizeText(companyName(row))) > 1;
-    const place = record ? [record.city, record.state, record.country].filter(Boolean).join(', ') : '';
-    find('[data-location-caption]').textContent = record ? (place || record.region || 'Location unspecified') : 'Select a plant on the map or in the table.';
-    find('[data-location-context]').textContent = record
-      ? `${year()} · kt/yr · ${alternatives.length} ${alternatives.length === 1 ? 'record' : 'records'}`
+  function drawLocationTable(records, names, caption) {
+    const table = find('[data-location-table]');
+    table.hidden = !records.length;
+    find('[data-location-caption]').textContent = caption || 'Select a plant on the map or in the table.';
+    find('[data-location-context]').textContent = records.length
+      ? `${year()} · kt/yr · ${records.length} ${records.length === 1 ? 'record' : 'records'}`
       : '';
-    find('[data-history-plant]').textContent = record
-      ? `${companyName(record)}${hasDuplicateName(record) ? ` · Record ${record.id}` : ''}`
-      : '';
-    find('[data-history-panel]').hidden = !record;
 
     const list = find('[data-location-list]');
     list.replaceChildren();
-    for (const row of [...alternatives].sort((a, b) => collator.compare(companyName(a), companyName(b)) || a.id - b.id)) {
-      const item = document.createElement('li');
+    const multiplePlaces = records.some(row => placeName(row) !== placeName(records[0]));
+    for (const row of records) {
+      const item = list.insertRow();
+      item.classList.toggle('oleo-row-current', row.id === selectedId);
+      const heading = document.createElement('th');
+      heading.scope = 'row';
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'oleo-location-plant';
       button.dataset.locationPlant = row.id;
-      button.textContent = companyName(row);
-      if (hasDuplicateName(row)) {
-        const identifier = document.createElement('small');
-        identifier.textContent = ` · Record ${row.id}`;
-        button.append(identifier);
+      button.textContent = names.get(row.id);
+      if (multiplePlaces) {
+        const place = document.createElement('small');
+        place.textContent = [row.city, row.country].filter(Boolean).join(', ') || placeName(row);
+        button.append(place);
       }
-      for (const product of Object.keys(products)) {
-        button.append(capacityLine(product, format(capacity(row, product))));
-      }
-      button.setAttribute('aria-pressed', String(row.id === record.id));
+      button.setAttribute('aria-pressed', String(row.id === selectedId));
       button.addEventListener('click', () => {
         selectRow(row.id);
         find(`[data-location-plant="${row.id}"]`)?.focus({ preventScroll: true });
       });
-      item.append(button);
-      list.append(item);
+      heading.append(button);
+      item.append(heading);
+      for (const product of Object.keys(products)) {
+        const cell = item.insertCell();
+        cell.className = 'oleo-number';
+        cell.dataset.capacityProduct = product;
+        cell.textContent = format(capacity(row, product));
+      }
     }
   }
 
-  function drawHistory(record) {
-    const scope = locationKey(record) ?? record?.id;
-    const scroll = lastHistoryScope === scope ? sidebarViewport.scrollTop : 0;
-    lastHistoryScope = scope;
+  function drawHistory(records, names) {
+    find('[data-history-panel]').hidden = !records.length;
     const content = document.createDocumentFragment();
     let changeCount = 0;
 
-    for (const period of record ? years.slice(1).reverse() : []) {
-      const changes = Object.keys(products).map(product => ({ product, difference: delta(record, product, period) }))
-        .filter(change => change.difference);
-      if (!changes.length) continue;
-      changeCount += changes.length;
-
+    for (const period of years.slice(1).reverse()) {
       const group = document.createElement('section');
       group.className = 'oleo-history-group';
       const heading = document.createElement('h3');
       heading.className = 'oleo-history-year';
       heading.textContent = period > latestHistoricalYear ? `${period} · Outlook` : period;
-      const button = document.createElement('button');
-      const entry = `${record.id}:${period}`;
-      button.type = 'button';
-      button.className = 'oleo-history-item';
-      button.dataset.historyEntry = entry;
-      button.dataset.historyYear = period;
-      button.setAttribute('aria-label', `${period}, ${changes.map(({ product, difference }) => `${products[product]} ${deltaText(difference)} kt/yr`).join(', ')}`);
-      if (year() === period) button.setAttribute('aria-current', 'true');
-
-      for (const { product, difference } of changes) {
-        button.append(capacityLine(product, `${deltaText(difference)} kt/yr`));
+      group.append(heading);
+      for (const row of records) {
+        const changes = Object.keys(products).map(product => ({ product, difference: delta(row, product, period) }))
+          .filter(change => change.difference);
+        if (!changes.length) continue;
+        changeCount += changes.length;
+        const button = document.createElement('button');
+        const entry = `${row.id}:${period}`;
+        button.type = 'button';
+        button.className = 'oleo-history-item';
+        button.dataset.historyEntry = entry;
+        button.dataset.historyYear = period;
+        if (year() === period && selectedId === row.id) button.setAttribute('aria-current', 'true');
+        const name = document.createElement('strong');
+        name.textContent = names.get(row.id);
+        button.append(name);
+        for (const { product, difference } of changes) {
+          button.append(capacityLine(product, `${deltaText(difference)} kt/yr`));
+        }
+        button.addEventListener('click', () => {
+          setYear(period);
+          if (!active(row)) setMapMode('changes');
+          selectRow(row.id);
+          find(`[data-history-entry="${entry}"]`)?.focus({ preventScroll: true });
+        });
+        group.append(button);
       }
-      button.addEventListener('click', () => {
-        setYear(period);
-        if (!active(record)) setMapMode('changes');
-        selectRow(record.id);
-        find(`[data-history-entry="${entry}"]`)?.focus({ preventScroll: true });
-      });
-      group.append(heading, button);
-      content.append(group);
+      if (group.childElementCount > 1) content.append(group);
     }
-    if (!changeCount) {
+    if (!changeCount && records.length) {
       const empty = document.createElement('p');
       empty.className = 'oleo-muted';
-      empty.textContent = record ? 'No year-over-year changes recorded for this plant.' : 'Select a plant to see its capacity changes.';
+      empty.textContent = 'No year-over-year changes recorded for this selection.';
       content.append(empty);
     }
-    find('[data-history-context]').textContent = record ? `${years[0]}–${years.at(-1)} · ${changeCount} ${changeCount === 1 ? 'change' : 'changes'}` : '';
+    find('[data-history-context]').textContent = records.length ? `${years[0]}–${years.at(-1)} · ${changeCount} ${changeCount === 1 ? 'change' : 'changes'}` : '';
     history.replaceChildren(content);
+  }
+
+  function drawPlantPanel(selected) {
+    const records = comparisonIds
+      ? rows.filter(row => comparisonIds.has(row.id))
+      : plantsByLocation.get(locationKey(selected)) ?? (selected ? [selected] : []);
+    const caption = records.length ? groupLocation(records) : '';
+    const ordered = [...records].sort((a, b) => collator.compare(companyName(a), companyName(b)) || a.id - b.id);
+    const nameCounts = d3.rollup(ordered, entries => entries.length, row => normalizeText(companyName(row)));
+    const names = new Map(ordered.map(row => {
+      const name = companyName(row);
+      return [row.id, nameCounts.get(normalizeText(name)) > 1 ? `${name} · Record ${row.id}` : name];
+    }));
+    const scope = ordered.map(row => row.id).join(',');
+    const scroll = lastPanelScope === scope ? sidebarViewport.scrollTop : 0;
+    drawComparison();
+    drawLocationTable(ordered, names, caption);
+    drawHistory(ordered, names);
     sidebarViewport.scrollTop = scroll;
+    lastPanelScope = scope;
   }
 
   function drawComparison() {
     const summary = find('[data-comparison]');
     summary.hidden = !regionInput.value && !comparisonIds;
     if (summary.hidden) return;
-    const names = new Set(visible.map(row => row.company.toLowerCase()).filter(name => name && name !== 'others'));
     find('[data-comparison-label]').textContent = comparisonIds ? 'Map selection' : regionInput.value;
-    find('[data-comparison-count]').textContent = `${names.size} ${names.size === 1 ? 'company' : 'companies'} · ${visible.length} ${visible.length === 1 ? 'record' : 'records'}`;
     find('[data-zoom-selection]').disabled = !mapRows.some(row => !comparisonIds || comparisonIds.has(row.id));
     find('[data-clear-selection]').hidden = !comparisonIds;
   }
@@ -786,11 +875,25 @@
     else map.call(zoom.transform, d3.zoomIdentity);
   }
 
+  function appendChangeCell(row, changes) {
+    const cell = row.insertCell();
+    cell.className = 'oleo-number';
+    if (!changes.length) cell.textContent = '—';
+    for (const { product, value } of changes) {
+      const label = document.createElement('div');
+      label.className = deltaClass(value);
+      label.textContent = `${deltaText(value)} ${product === 'acid' ? 'FAC' : 'FOH'}`;
+      cell.append(label);
+    }
+  }
+
   function drawTable() {
-    const head = find('thead');
-    const body = find('tbody');
+    const head = find('#oleo-table-viewport thead');
+    const body = find('#oleo-table-viewport tbody');
+    const foot = find('#oleo-table-viewport tfoot');
     head.replaceChildren();
     body.replaceChildren();
+    foot.replaceChildren();
     const columns = matrix
       ? selectedProducts().flatMap(product => years.map(period => ({ product, period })))
       : Object.keys(products).map(product => ({ product, period: year() }));
@@ -858,21 +961,32 @@
       }
       if (!matrix) {
         const changes = selectedProducts().map(product => ({ product, value: delta(row, product) })).filter(item => item.value);
-        const cell = tr.insertCell();
-        cell.className = 'oleo-number';
-        if (!changes.length) cell.textContent = '—';
-        for (const { product, value } of changes) {
-          const label = document.createElement('div');
-          label.className = deltaClass(value);
-          label.textContent = `${deltaText(value)} ${product === 'acid' ? 'FAC' : 'FOH'}`;
-          cell.append(label);
-        }
+        appendChangeCell(tr, changes);
       }
     }
     if (!tableRows.length) {
       const empty = body.insertRow().insertCell();
       empty.colSpan = headers.length;
       empty.textContent = 'No capacity records for this view.';
+    }
+    if (visible.length) {
+      const total = foot.insertRow();
+      const label = document.createElement('th');
+      label.scope = 'row';
+      label.colSpan = identityFields.length;
+      label.textContent = 'Total';
+      total.append(label);
+      for (const { product, period } of columns) {
+        const cell = total.insertCell();
+        cell.className = 'oleo-number';
+        cell.textContent = format(sumKnown(visible.map(row => capacity(row, product, period))));
+      }
+      if (!matrix) {
+        const changes = selectedProducts().map(product => ({
+          product, value: sumKnown(visible.map(row => delta(row, product))),
+        })).filter(item => item.value != null);
+        appendChangeCell(total, changes);
+      }
     }
     const scope = comparisonIds ? 'Map selection' : regionInput.value;
     find('[data-table-title]').textContent = scope ? `Capacities · ${scope}` : 'Capacities';
@@ -906,10 +1020,7 @@
     const unmapped = mapCandidates.length - mapRows.length;
     find('[data-map-coverage]').textContent = unmapped ? `Approximate locations · ${unmapped} records without pins` : 'Approximate locations';
     drawMap();
-    drawComparison();
-    const selected = rows.find(row => row.id === selectedId);
-    drawSelectedPlant(selected);
-    drawHistory(selected);
+    drawPlantPanel(rows.find(row => row.id === selectedId));
     drawTable();
   }
 
@@ -1072,5 +1183,6 @@
 })();
 </script>
 <script type="module" src="./panel-sizes.js"></script>
+<script type="module" src="./colours.js"></script>
 </body>
 </html>
