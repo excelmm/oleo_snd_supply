@@ -1,0 +1,13 @@
+/data/
+output/
+*.xlsx
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+.env
+.env.*
+__pycache__/
+*.py[cod]
