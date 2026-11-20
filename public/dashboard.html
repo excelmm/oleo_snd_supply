@@ -55,6 +55,7 @@
         <div class="oleo-map-tooltip" id="oleo-map-tooltip" role="tooltip" hidden>
           <strong data-map-tooltip-name></strong>
           <p class="oleo-muted" data-map-tooltip-location></p>
+          <p class="oleo-muted" data-map-tooltip-location-note hidden></p>
           <p class="oleo-muted" data-map-tooltip-year></p>
           <dl class="oleo-tooltip-values">
             <div><dt>Fatty acid</dt><dd data-map-tooltip-acid></dd></div>
@@ -321,6 +322,17 @@
   #oleo-capacity-preview .oleo-location-plant small {
     display: block; color: var(--muted); font-size: var(--text-small); font-weight: 400;
   }
+  #oleo-capacity-preview .oleo-location-group .oleo-number { font-weight: 600; }
+  #oleo-capacity-preview .oleo-location-group .oleo-location-plant {
+    display: flex; align-items: center; gap: 7px;
+  }
+  #oleo-capacity-preview .oleo-location-group .oleo-location-plant::before {
+    content: ''; flex: none; width: 6px; height: 6px;
+    border: solid currentColor; border-width: 0 1.5px 1.5px 0;
+    transform: rotate(-45deg);
+  }
+  #oleo-capacity-preview .oleo-location-group [aria-expanded="true"]::before { transform: rotate(45deg); }
+  #oleo-capacity-preview .oleo-location-member .oleo-location-plant { padding-inline-start: 16px; }
   #oleo-capacity-preview .oleo-history-year {
     position: sticky; z-index: 1; top: 0; margin: 0; padding: 6px 6px 4px; background: var(--paper);
     border-bottom: 1px solid var(--line); font-size: var(--text-data); font-weight: 600; font-variant-numeric: tabular-nums;
@@ -471,6 +483,7 @@
   let mapRows = [];
   let tooltipPin = null;
   let lastPanelScope;
+  const expandedPlantGroups = new Set();
 
   if (dataset.source) announcement.textContent = dataset.source;
   const sources = dataset.locationSources ?? [];
@@ -597,6 +610,10 @@
     const hasMissingCapacity = group.rows.some(row => Object.keys(products).some(product => capacity(row, product) == null));
     find('[data-map-tooltip-name]').textContent = grouped ? `${group.rows.length} capacity records` : companyName(first);
     find('[data-map-tooltip-location]').textContent = groupLocation(group.rows);
+    const note = find('[data-map-tooltip-location-note]');
+    const locationNote = group.rows.find(row => row.locationNote)?.locationNote;
+    note.hidden = !locationNote;
+    note.textContent = grouped ? 'Includes area-level locations' : locationNote ?? '';
     find('[data-map-tooltip-year]').textContent = `${year()} ${hasMissingCapacity ? 'known capacity' : 'capacity'}`;
     for (const product of Object.keys(products)) {
       const value = totals[product];
@@ -722,7 +739,83 @@
     return line;
   }
 
-  function drawLocationTable(records, names, caption) {
+  function appendLocationCapacities(item, records) {
+    for (const [product, value] of Object.entries(groupCapacities(records))) {
+      const cell = item.insertCell();
+      cell.className = 'oleo-number';
+      cell.dataset.capacityProduct = product;
+      cell.textContent = format(value);
+    }
+  }
+
+  function appendLocationPlant(list, row, multiplePlaces, grouped = false) {
+    const item = list.insertRow();
+    item.id = `oleo-location-record-${row.id}`;
+    item.classList.toggle('oleo-row-current', row.id === selectedId);
+    item.classList.toggle('oleo-location-member', grouped);
+    const heading = document.createElement('th');
+    heading.scope = 'row';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'oleo-location-plant';
+    button.dataset.locationPlant = row.id;
+    button.textContent = grouped ? `${companyName(row)} (#${row.id})` : companyName(row);
+    if (multiplePlaces) {
+      const place = document.createElement('small');
+      place.textContent = [row.city, row.country].filter(Boolean).join(', ') || placeName(row);
+      button.append(place);
+    }
+    if (row.locationNote) {
+      const note = document.createElement('small');
+      note.textContent = row.locationNote;
+      button.append(note);
+    }
+    button.setAttribute('aria-pressed', String(row.id === selectedId));
+    button.addEventListener('click', () => {
+      selectRow(row.id);
+      find(`[data-location-plant="${row.id}"]`)?.focus({ preventScroll: true });
+    });
+    heading.append(button);
+    item.append(heading);
+    appendLocationCapacities(item, [row]);
+    return item;
+  }
+
+  function appendLocationGroup(list, records, multiplePlaces) {
+    const first = records[0];
+    const item = list.insertRow();
+    item.className = 'oleo-location-group';
+    const heading = document.createElement('th');
+    heading.scope = 'row';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'oleo-location-plant';
+    const label = document.createElement('span');
+    const count = document.createElement('small');
+    count.textContent = `${records.length} records`;
+    label.append(companyName(first), count);
+    button.append(label);
+    heading.append(button);
+    item.append(heading);
+    appendLocationCapacities(item, records);
+
+    const members = records.map(row => appendLocationPlant(list, row, multiplePlaces, true));
+    const hasSelectedPlant = records.some(row => row.id === selectedId);
+    button.setAttribute('aria-controls', members.map(row => row.id).join(' '));
+    function updateExpansion() {
+      const expanded = expandedPlantGroups.has(first.id);
+      button.setAttribute('aria-expanded', String(expanded));
+      item.classList.toggle('oleo-row-current', hasSelectedPlant && !expanded);
+      for (const row of members) row.hidden = !expanded;
+    }
+    button.addEventListener('click', () => {
+      if (!expandedPlantGroups.delete(first.id)) expandedPlantGroups.add(first.id);
+      updateExpansion();
+    });
+    updateExpansion();
+  }
+
+  function drawLocationTable(records, caption) {
     const table = find('[data-location-table]');
     table.hidden = !records.length;
     find('[data-location-caption]').textContent = caption || 'Select a plant on the map or in the table.';
@@ -733,38 +826,14 @@
     const list = find('[data-location-list]');
     list.replaceChildren();
     const multiplePlaces = records.some(row => placeName(row) !== placeName(records[0]));
-    for (const row of records) {
-      const item = list.insertRow();
-      item.classList.toggle('oleo-row-current', row.id === selectedId);
-      const heading = document.createElement('th');
-      heading.scope = 'row';
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'oleo-location-plant';
-      button.dataset.locationPlant = row.id;
-      button.textContent = names.get(row.id);
-      if (multiplePlaces) {
-        const place = document.createElement('small');
-        place.textContent = [row.city, row.country].filter(Boolean).join(', ') || placeName(row);
-        button.append(place);
-      }
-      button.setAttribute('aria-pressed', String(row.id === selectedId));
-      button.addEventListener('click', () => {
-        selectRow(row.id);
-        find(`[data-location-plant="${row.id}"]`)?.focus({ preventScroll: true });
-      });
-      heading.append(button);
-      item.append(heading);
-      for (const product of Object.keys(products)) {
-        const cell = item.insertCell();
-        cell.className = 'oleo-number';
-        cell.dataset.capacityProduct = product;
-        cell.textContent = format(capacity(row, product));
-      }
+    const groups = d3.group(records, row => normalizeText(companyName(row).trim()));
+    for (const group of groups.values()) {
+      if (group.length === 1) appendLocationPlant(list, group[0], multiplePlaces);
+      else appendLocationGroup(list, group, multiplePlaces);
     }
   }
 
-  function drawHistory(records, names) {
+  function drawHistory(records) {
     find('[data-history-panel]').hidden = !records.length;
     const content = document.createDocumentFragment();
     let changeCount = 0;
@@ -789,7 +858,7 @@
         button.dataset.historyYear = period;
         if (year() === period && selectedId === row.id) button.setAttribute('aria-current', 'true');
         const name = document.createElement('strong');
-        name.textContent = names.get(row.id);
+        name.textContent = companyName(row);
         button.append(name);
         for (const { product, difference } of changes) {
           button.append(capacityLine(product, `${deltaText(difference)} kt/yr`));
@@ -820,16 +889,13 @@
       : plantsByLocation.get(locationKey(selected)) ?? (selected ? [selected] : []);
     const caption = records.length ? groupLocation(records) : '';
     const ordered = [...records].sort((a, b) => collator.compare(companyName(a), companyName(b)) || a.id - b.id);
-    const nameCounts = d3.rollup(ordered, entries => entries.length, row => normalizeText(companyName(row)));
-    const names = new Map(ordered.map(row => {
-      const name = companyName(row);
-      return [row.id, nameCounts.get(normalizeText(name)) > 1 ? `${name} · Record ${row.id}` : name];
-    }));
     const scope = ordered.map(row => row.id).join(',');
-    const scroll = lastPanelScope === scope ? sidebarViewport.scrollTop : 0;
+    const sameScope = lastPanelScope === scope;
+    const scroll = sameScope ? sidebarViewport.scrollTop : 0;
+    if (!sameScope) expandedPlantGroups.clear();
     drawComparison();
-    drawLocationTable(ordered, names, caption);
-    drawHistory(ordered, names);
+    drawLocationTable(ordered, caption);
+    drawHistory(ordered);
     sidebarViewport.scrollTop = scroll;
     lastPanelScope = scope;
   }
